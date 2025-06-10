@@ -1,0 +1,76 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+
+    - name: Run tests
+      run: |
+        pytest test.py
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build Docker image
+      run: |
+        docker build -t mtailor-classifier .
+        docker run mtailor-classifier python -c "import onnxruntime; print('ONNX Runtime version:', onnxruntime.__version__)"
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install Cerebrium CLI
+      run: pip install cerebrium
+
+    - name: Configure Cerebrium
+      env:
+        CEREBRIUM_API_KEY: ${{ secrets.CEREBRIUM_API_KEY }}
+      run: |
+        echo "Configuring Cerebrium CLI"
+        cerebrium login --api-key $CEREBRIUM_API_KEY
+
+    - name: Deploy to Cerebrium
+      run: |
+        cerebrium deploy
+
+    - name: Run deployment tests
+      env:
+        CEREBRIUM_API_KEY: ${{ secrets.CEREBRIUM_API_KEY }}
+        CEREBRIUM_ENDPOINT: ${{ secrets.CEREBRIUM_ENDPOINT }}
+      run: |
+        python test_server.py --api-key $CEREBRIUM_API_KEY --endpoint-url $CEREBRIUM_ENDPOINT --run-tests

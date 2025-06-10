@@ -1,0 +1,25 @@
+[cerebrium.deployment]
+name = "mtailor-image-classifier"
+python_version = "3.12"  # More stable version for ML libraries
+include = ["./*"]
+exclude = [".*", "__pycache__", "*.pyc"]
+shell_commands = ["pip install -r requirements.txt"]
+
+[cerebrium.hardware]
+cpu = 2
+memory = 4.0
+compute = "GPU"
+gpu_count = 1
+provider = "aws"
+region = "us-east-1"
+
+[cerebrium.runtime.custom]
+port = 8000
+healthcheck_endpoint = "/health"
+dockerfile_path = "./Dockerfile"
+
+[cerebrium.scaling]
+min_replicas = 1
+max_replicas = 3
+cooldown = 60
+replica_concurrency = 100

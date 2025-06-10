@@ -1,0 +1,12 @@
+fastapi>=0.95.0
+uvicorn>=0.21.1
+onnx>=1.14.0
+# onnxruntime>=1.14.1 # for local/CPU inference
+onnxruntime-gpu==1.15.1 # for GPU inference
+torch>=2.0.0
+torchvision>=0.15.1
+pillow>=9.5.0
+numpy>=1.24.0
+python-multipart>=0.0.6
+requests>=2.28.0
+pytest>=7.3.0
